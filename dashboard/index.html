@@ -193,6 +193,10 @@
       border-color: rgba(0,212,255,0.3);
     }
     
+    .team-card.completed {
+      border-left: 4px solid #00ff88;
+    }
+    
     .team-card.in-progress {
       border-left: 4px solid #ffd700;
     }
@@ -223,6 +227,11 @@
       border-radius: 12px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+    }
+    
+    .team-status.completed {
+      background: rgba(0,255,136,0.2);
+      color: #00ff88;
     }
     
     .team-status.in-progress {
@@ -296,7 +305,7 @@
     
     .bugs-table-header {
       display: grid;
-      grid-template-columns: 100px 80px 100px 1fr 100px;
+      grid-template-columns: 100px 80px 120px 1fr 100px;
       gap: 10px;
       padding: 16px 20px;
       background: rgba(0,0,0,0.2);
@@ -309,7 +318,7 @@
     
     .bug-row {
       display: grid;
-      grid-template-columns: 100px 80px 100px 1fr 100px;
+      grid-template-columns: 100px 80px 120px 1fr 100px;
       gap: 10px;
       padding: 14px 20px;
       border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -331,31 +340,33 @@
       color: #00d4ff;
     }
     
-    .bug-wave {
+    .bug-phase {
       font-size: 0.8rem;
       padding: 4px 10px;
       border-radius: 12px;
       text-align: center;
     }
     
-    .bug-wave.wave-2 {
+    .bug-phase.phase-1 {
+      background: rgba(0,255,136,0.2);
+      color: #00ff88;
+    }
+    
+    .bug-phase.phase-2 {
       background: rgba(123,44,191,0.2);
       color: #b388ff;
     }
     
-    .bug-wave.wave-3 {
-      background: rgba(0,212,255,0.2);
-      color: #00d4ff;
-    }
-    
     .bug-team {
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+      color: #ccc;
     }
     
     .bug-description {
       font-size: 0.9rem;
       color: #ccc;
+      line-height: 1.4;
     }
     
     .bug-status {
@@ -381,6 +392,12 @@
       display: flex;
       align-items: center;
       gap: 15px;
+      transition: all 0.2s;
+    }
+    
+    .service-item:hover {
+      border-color: rgba(0,212,255,0.3);
+      transform: translateX(5px);
     }
     
     .service-status {
@@ -390,9 +407,49 @@
     .service-info h4 {
       font-size: 1rem;
       margin-bottom: 4px;
+      color: #fff;
     }
     
     .service-info p {
+      font-size: 0.85rem;
+      color: #888;
+    }
+    
+    .infrastructure-section {
+      margin-bottom: 30px;
+    }
+    
+    .infra-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+    
+    .infra-item {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.2s;
+    }
+    
+    .infra-item:hover {
+      border-color: rgba(123,44,191,0.5);
+      transform: translateY(-3px);
+    }
+    
+    .infra-icon {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+    
+    .infra-item h4 {
+      font-size: 1rem;
+      margin-bottom: 6px;
+      color: #b388ff;
+    }
+    
+    .infra-item p {
       font-size: 0.85rem;
       color: #888;
     }
@@ -463,7 +520,7 @@
       
       .bugs-table-header,
       .bug-row {
-        grid-template-columns: 80px 60px 60px 1fr;
+        grid-template-columns: 80px 60px 80px 1fr;
       }
       
       .bugs-table-header span:last-child,
@@ -511,6 +568,22 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+    
+    .error-banner {
+      background: rgba(255,107,107,0.2);
+      border: 1px solid #ff6b6b;
+      color: #ff6b6b;
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .error-banner.visible {
+      display: flex;
+    }
   </style>
 </head>
 <body>
@@ -529,32 +602,37 @@
       </div>
     </header>
 
+    <div class="error-banner" id="error-banner">
+      <span>⚠️</span>
+      <span id="error-message">Failed to load data</span>
+    </div>
+
     <section class="summary-cards">
       <div class="card total">
         <h3>Total Bugs</h3>
-        <div class="value" id="total-bugs">55</div>
+        <div class="value" id="total-bugs">--</div>
       </div>
       <div class="card fixed">
         <h3>Fixed</h3>
-        <div class="value" id="fixed-bugs">55</div>
+        <div class="value" id="fixed-bugs">--</div>
       </div>
       <div class="card progress">
         <h3>In Progress</h3>
-        <div class="value" id="progress-bugs">0</div>
+        <div class="value" id="progress-bugs">--</div>
       </div>
       <div class="card pending">
         <h3>Remaining</h3>
-        <div class="value" id="pending-bugs">0</div>
+        <div class="value" id="pending-bugs">--</div>
       </div>
     </section>
 
     <section class="progress-section">
       <div class="progress-header">
         <h2>Overall Progress</h2>
-        <div class="progress-percentage" id="progress-pct">100%</div>
+        <div class="progress-percentage" id="progress-pct">--%</div>
       </div>
       <div class="progress-bar">
-        <div class="progress-fill" id="progress-fill" style="width: 100%"></div>
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
       </div>
     </section>
 
@@ -566,18 +644,18 @@
     </section>
 
     <section class="bugs-section">
-      <h2 class="section-title">🐛 Bug Status</h2>
+      <h2 class="section-title">🐛 Bug Status (55 Total)</h2>
       <div class="bugs-filter">
         <button class="filter-btn active" data-filter="all">All</button>
         <button class="filter-btn" data-filter="fixed">✅ Fixed</button>
-        <button class="filter-btn" data-filter="in-progress">🟡 In Progress</button>
+        <button class="filter-btn" data-filter="audit-passed">🎉 Audit Passed</button>
+        <button class="filter-btn" data-filter="failing">❌ Failing</button>
         <button class="filter-btn" data-filter="pending">⏳ Pending</button>
-        <button class="filter-btn" data-filter="partial">⚠️ Partial</button>
       </div>
       <div class="bugs-table">
         <div class="bugs-table-header">
           <span>Bug ID</span>
-          <span>Wave</span>
+          <span>Phase</span>
           <span>Team</span>
           <span>Description</span>
           <span>Status</span>
@@ -592,6 +670,13 @@
       <h2 class="section-title">🏗️ Infrastructure Services</h2>
       <div class="services-grid" id="services-grid">
         <!-- Services populated by JS -->
+      </div>
+    </section>
+
+    <section class="infrastructure-section">
+      <h2 class="section-title">🔩 Core Infrastructure</h2>
+      <div class="infra-grid" id="infra-grid">
+        <!-- Infrastructure items populated by JS -->
       </div>
     </section>
 
@@ -610,124 +695,267 @@
   <script>
     let currentFilter = 'all';
     let data = null;
+    let refreshInterval = null;
     
     const statusIcons = {
       'fixed': '✅',
+      'audit-passed': '🎉',
+      'completed': '✅',
       'in-progress': '🟡',
       'pending': '⏳',
       'partial': '⚠️',
-      'waiting': '⏸️'
+      'failing': '❌',
+      'waiting': '⏸️',
+      'created': '✅'
     };
     
     const statusLabels = {
       'fixed': 'Fixed',
+      'audit-passed': 'Audit Passed',
+      'completed': 'Completed',
       'in-progress': 'In Progress',
       'pending': 'Pending',
       'partial': 'Partial',
-      'waiting': 'Waiting'
+      'failing': 'Failing',
+      'waiting': 'Waiting',
+      'created': 'Created'
     };
+
+    // Infrastructure items that are always present
+    const infrastructureItems = [
+      { icon: '🗄️', name: 'Database Layer', description: 'Connection pooling and query optimization', status: 'operational' },
+      { icon: '🔌', name: 'API Gateway', description: 'Request routing and rate limiting', status: 'operational' },
+      { icon: '💳', name: 'Payment Processors', description: 'Square, EVO, Evertec integrations', status: 'operational' },
+      { icon: '📡', name: 'Scanner Service', description: 'Posiflex and QR code scanner management', status: 'operational' },
+      { icon: '🖨️', name: 'Print Service', description: 'Receipt and label printing', status: 'operational' },
+      { icon: '⏰', name: 'Time Sync Service', description: 'NTP time synchronization', status: 'operational' },
+      { icon: '🎁', name: 'Loyalty Engine', description: 'Rewards and discount processing', status: 'operational' },
+      { icon: '📊', name: 'Analytics Pipeline', description: 'Event collection and reporting', status: 'operational' }
+    ];
     
     async function fetchData() {
       try {
+        // Add cache-busting parameter
         const response = await fetch(`data.json?t=${Date.now()}`);
-        data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const newData = await response.json();
+        
+        // Validate data structure
+        if (!newData || typeof newData !== 'object') {
+          throw new Error('Invalid data format');
+        }
+        
+        data = newData;
+        hideError();
         updateDashboard();
+        
+        // Store last successful fetch time
+        localStorage.setItem('lastDashboardUpdate', Date.now());
+        
       } catch (error) {
         console.error('Failed to fetch data:', error);
-        addLogEntry('error', 'Failed to fetch dashboard data');
+        showError(`Failed to fetch dashboard data: ${error.message}`);
+        
+        // Try to use cached data if available
+        const cached = localStorage.getItem('dashboardData');
+        if (cached) {
+          try {
+            data = JSON.parse(cached);
+            updateDashboard();
+          } catch (e) {
+            console.error('Failed to parse cached data');
+          }
+        }
       }
+    }
+
+    function showError(message) {
+      const banner = document.getElementById('error-banner');
+      const msgEl = document.getElementById('error-message');
+      msgEl.textContent = message;
+      banner.classList.add('visible');
+      
+      // Auto-hide after 10 seconds
+      setTimeout(() => hideError(), 10000);
+    }
+
+    function hideError() {
+      document.getElementById('error-banner').classList.remove('visible');
     }
     
     function updateDashboard() {
       if (!data) return;
       
-      // Update summary cards
-      document.getElementById('total-bugs').textContent = data.summary.totalBugs;
-      document.getElementById('fixed-bugs').textContent = data.summary.fixed;
-      document.getElementById('progress-bugs').textContent = data.summary.partial;
-      document.getElementById('pending-bugs').textContent = data.summary.pending;
-      
-      // Update progress bar
-      const progress = ((data.summary.fixed / data.summary.totalBugs) * 100).toFixed(1);
-      document.getElementById('progress-pct').textContent = `${progress}%`;
-      document.getElementById('progress-fill').style.width = `${progress}%`;
-      
-      // Update teams
-      updateTeams(data.teams);
-      
-      // Update bugs list
-      updateBugs(data.bugs);
-      
-      // Update services
-      updateServices(data.servicesToCreate);
-      
-      // Update logs
-      updateLogs(data.logs);
-      
-      // Update timestamp
-      const date = new Date(data.lastUpdated);
-      document.getElementById('last-updated-time').textContent = date.toLocaleString();
-      
-      // Hide loading
-      document.getElementById('loading').classList.add('hidden');
+      try {
+        // Safely access summary with defaults
+        const summary = data.summary || {};
+        const totalBugs = summary.totalBugs || 0;
+        const fixed = summary.fixed || 0;
+        const partial = summary.partial || 0;
+        const pending = summary.pending || 0;
+        const failing = summary.failing || 0;
+        
+        // Update summary cards
+        document.getElementById('total-bugs').textContent = totalBugs;
+        document.getElementById('fixed-bugs').textContent = fixed;
+        document.getElementById('progress-bugs').textContent = partial;
+        document.getElementById('pending-bugs').textContent = pending + failing;
+        
+        // Update progress bar
+        const progress = totalBugs > 0 ? ((fixed / totalBugs) * 100).toFixed(1) : 0;
+        document.getElementById('progress-pct').textContent = `${progress}%`;
+        document.getElementById('progress-fill').style.width = `${progress}%`;
+        
+        // Update teams
+        updateTeams(data.teams || []);
+        
+        // Update bugs list
+        updateBugs(data.bugs || []);
+        
+        // Update services
+        updateServices(data.servicesToCreate || []);
+        
+        // Update infrastructure
+        updateInfrastructure();
+        
+        // Update logs
+        updateLogs(data.logs || []);
+        
+        // Update timestamp
+        const lastUpdated = data.lastUpdated || new Date().toISOString();
+        const date = new Date(lastUpdated);
+        document.getElementById('last-updated-time').textContent = date.toLocaleString();
+        
+        // Cache data for offline resilience
+        localStorage.setItem('dashboardData', JSON.stringify(data));
+        
+        // Hide loading
+        document.getElementById('loading').classList.add('hidden');
+        
+      } catch (error) {
+        console.error('Error updating dashboard:', error);
+        showError(`Dashboard update failed: ${error.message}`);
+      }
     }
     
     function updateTeams(teams) {
       const grid = document.getElementById('teams-grid');
-      grid.innerHTML = teams.map(team => `
-        <div class="team-card ${team.status}">
+      
+      if (!teams || teams.length === 0) {
+        grid.innerHTML = '<p style="color: #888; text-align: center;">No team data available</p>';
+        return;
+      }
+      
+      grid.innerHTML = teams.map(team => {
+        const status = team.status || 'waiting';
+        const progress = team.progress || 0;
+        const label = statusLabels[status] || status;
+        
+        return `
+        <div class="team-card ${status}">
           <div class="team-header">
-            <span class="team-id">TEAM ${team.id}</span>
-            <span class="team-status ${team.status}">${statusLabels[team.status]}</span>
+            <span class="team-id">TEAM ${team.id || '?'}</span>
+            <span class="team-status ${status}">${label}</span>
           </div>
-          <h4>${team.name}</h4>
-          <p class="team-members">${team.members}</p>
+          <h4>${team.name || 'Unnamed Team'}</h4>
+          <p class="team-members">${team.members || 'No members listed'}</p>
           <div class="team-progress">
-            <div class="team-progress-fill" style="width: ${team.progress}%"></div>
+            <div class="team-progress-fill" style="width: ${progress}%"></div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     }
     
     function updateBugs(bugs) {
       const list = document.getElementById('bugs-list');
+      
+      if (!bugs || bugs.length === 0) {
+        list.innerHTML = '<div class="bug-row"><span style="color: #888; text-align: center; grid-column: 1/-1;">No bugs to display</span></div>';
+        return;
+      }
+      
       const filteredBugs = currentFilter === 'all' 
         ? bugs 
         : bugs.filter(b => b.status === currentFilter);
       
-      list.innerHTML = filteredBugs.map(bug => `
+      if (filteredBugs.length === 0) {
+        list.innerHTML = `<div class="bug-row"><span style="color: #888; text-align: center; grid-column: 1/-1;">No bugs with status "${currentFilter}"</span></div>`;
+        return;
+      }
+      
+      list.innerHTML = filteredBugs.map(bug => {
+        const status = bug.status || 'pending';
+        const phase = bug.phase || 1;
+        const icon = statusIcons[status] || '⏳';
+        const phaseClass = phase === 1 ? 'phase-1' : 'phase-2';
+        
+        return `
         <div class="bug-row">
-          <span class="bug-id">${bug.id}</span>
-          <span class="bug-wave wave-${bug.wave}">Wave ${bug.wave}</span>
-          <span class="bug-team">Team ${bug.team}</span>
-          <span class="bug-description">${bug.description}</span>
-          <span class="bug-status">${statusIcons[bug.status]}</span>
+          <span class="bug-id">${bug.id || 'N/A'}</span>
+          <span class="bug-phase ${phaseClass}">Phase ${phase}</span>
+          <span class="bug-team">${bug.team || 'Unassigned'}</span>
+          <span class="bug-description">${bug.description || 'No description'}</span>
+          <span class="bug-status" title="${status}">${icon}</span>
         </div>
-      `).join('');
+      `}).join('');
     }
     
     function updateServices(services) {
       const grid = document.getElementById('services-grid');
-      grid.innerHTML = services.map(service => `
+      
+      if (!services || services.length === 0) {
+        grid.innerHTML = '<p style="color: #888; text-align: center;">No services configured</p>';
+        return;
+      }
+      
+      grid.innerHTML = services.map(service => {
+        const status = service.status || 'pending';
+        const icon = statusIcons[status] || '⏳';
+        
+        return `
         <div class="service-item">
-          <span class="service-status">${statusIcons[service.status]}</span>
+          <span class="service-status">${icon}</span>
           <div class="service-info">
-            <h4>${service.name}</h4>
-            <p>${service.description}</p>
+            <h4>${service.name || 'Unnamed Service'}</h4>
+            <p>${service.description || 'No description'}</p>
           </div>
+        </div>
+      `}).join('');
+    }
+
+    function updateInfrastructure() {
+      const grid = document.getElementById('infra-grid');
+      
+      grid.innerHTML = infrastructureItems.map(item => `
+        <div class="infra-item">
+          <div class="infra-icon">${item.icon}</div>
+          <h4>${item.name}</h4>
+          <p>${item.description}</p>
         </div>
       `).join('');
     }
     
     function updateLogs(logs) {
       const section = document.getElementById('logs-section');
+      
+      if (!logs || logs.length === 0) {
+        section.innerHTML = '<p style="color: #888; text-align: center;">No activity logs</p>';
+        return;
+      }
+      
       section.innerHTML = logs.slice(-20).reverse().map(log => {
-        const time = new Date(log.time).toLocaleTimeString();
+        const time = log.time ? new Date(log.time).toLocaleTimeString() : '--:--';
+        const type = log.type || 'info';
+        
         return `
           <div class="log-entry">
             <span class="log-time">${time}</span>
-            <span class="log-type ${log.type}">${log.type}</span>
-            <span class="log-message">${log.message}</span>
+            <span class="log-type ${type}">${type}</span>
+            <span class="log-message">${log.message || 'No message'}</span>
           </div>
         `;
       }).join('');
@@ -735,6 +963,8 @@
     
     function addLogEntry(type, message) {
       if (!data) return;
+      if (!data.logs) data.logs = [];
+      
       data.logs.push({
         time: new Date().toISOString(),
         type: type,
@@ -749,13 +979,28 @@
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentFilter = btn.dataset.filter;
-        if (data) updateBugs(data.bugs);
+        if (data) updateBugs(data.bugs || []);
       });
     });
     
     // Initial fetch and polling
-    fetchData();
-    setInterval(fetchData, 30000);
+    function init() {
+      fetchData();
+      
+      // Set up refresh interval (30 seconds)
+      if (refreshInterval) clearInterval(refreshInterval);
+      refreshInterval = setInterval(fetchData, 30000);
+    }
+    
+    // Start the dashboard
+    init();
+    
+    // Handle visibility change to refresh when tab becomes active
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        fetchData();
+      }
+    });
   </script>
 </body>
 </html>
