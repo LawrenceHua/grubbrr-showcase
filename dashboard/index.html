@@ -907,21 +907,26 @@
     function updateServices(services) {
       const grid = document.getElementById('services-grid');
       
-      if (!services || services.length === 0) {
+      if (!services || !Array.isArray(services) || services.length === 0) {
         grid.innerHTML = '<p style="color: #888; text-align: center;">No services configured</p>';
         return;
       }
       
       grid.innerHTML = services.map(service => {
+        if (!service || typeof service !== 'object') {
+          return '';
+        }
         const status = service.status || 'pending';
         const icon = statusIcons[status] || '⏳';
+        const name = service.name || 'Unnamed Service';
+        const description = service.description || 'No description';
         
         return `
         <div class="service-item">
           <span class="service-status">${icon}</span>
           <div class="service-info">
-            <h4>${service.name || 'Unnamed Service'}</h4>
-            <p>${service.description || 'No description'}</p>
+            <h4>${name}</h4>
+            <p>${description}</p>
           </div>
         </div>
       `}).join('');
