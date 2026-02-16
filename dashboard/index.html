@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRUBBRR Bug Fix Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      padding: 30px 0;
+      border-bottom: 2px solid #2d2d4a;
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      color: #888;
+      font-size: 1rem;
+    }
+    
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #00ff88;
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
+    
+    .pulse {
+      width: 8px;
+      height: 8px;
+      background: #00ff88;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    
+    .card h3 {
+      font-size: 0.9rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    
+    .card .value {
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+    
+    .card.total .value { color: #00d4ff; }
+    .card.fixed .value { color: #00ff88; }
+    .card.progress .value { color: #ffd700; }
+    .card.pending .value { color: #ff6b6b; }
+    
+    .progress-section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .progress-header h2 {
+      font-size: 1.3rem;
+    }
+    
+    .progress-percentage {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #00ff88;
+    }
+    
+    .progress-bar {
+      height: 20px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00d4ff, #00ff88);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      position: relative;
+    }
+    
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .teams-section {
+      margin-bottom: 30px;
+    }
+    
+    .section-title {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .team-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.3s;
+    }
+    
+    .team-card:hover {
+      border-color: rgba(0,212,255,0.3);
+    }
+    
+    .team-card.in-progress {
+      border-left: 4px solid #ffd700;
+    }
+    
+    .team-card.waiting {
+      border-left: 4px solid #888;
+    }
+    
+    .team-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .team-id {
+      background: rgba(0,212,255,0.2);
+      color: #00d4ff;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    
+    .team-status {
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .team-status.in-progress {
+      background: rgba(255,215,0,0.2);
+      color: #ffd700;
+    }
+    
+    .team-status.waiting {
+      background: rgba(136,136,136,0.2);
+      color: #888;
+    }
+    
+    .team-card h4 {
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+    
+    .team-members {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 12px;
+    }
+    
+    .team-progress {
+      height: 6px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .team-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00d4ff, #00ff88);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+    
+    .bugs-section {
+      margin-bottom: 30px;
+    }
+    
+    .bugs-filter {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #e0e0e0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+    
+    .filter-btn:hover, .filter-btn.active {
+      background: rgba(0,212,255,0.2);
+      border-color: #00d4ff;
+    }
+    
+    .bugs-table {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .bugs-table-header {
+      display: grid;
+      grid-template-columns: 100px 80px 100px 1fr 100px;
+      gap: 10px;
+      padding: 16px 20px;
+      background: rgba(0,0,0,0.2);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #888;
+    }
+    
+    .bug-row {
+      display: grid;
+      grid-template-columns: 100px 80px 100px 1fr 100px;
+      gap: 10px;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.2s;
+      align-items: center;
+    }
+    
+    .bug-row:hover {
+      background: rgba(255,255,255,0.03);
+    }
+    
+    .bug-row:last-child {
+      border-bottom: none;
+    }
+    
+    .bug-id {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.85rem;
+      color: #00d4ff;
+    }
+    
+    .bug-wave {
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    
+    .bug-wave.wave-2 {
+      background: rgba(123,44,191,0.2);
+      color: #b388ff;
+    }
+    
+    .bug-wave.wave-3 {
+      background: rgba(0,212,255,0.2);
+      color: #00d4ff;
+    }
+    
+    .bug-team {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    
+    .bug-description {
+      font-size: 0.9rem;
+      color: #ccc;
+    }
+    
+    .bug-status {
+      text-align: center;
+      font-size: 1.2rem;
+    }
+    
+    .services-section {
+      margin-bottom: 30px;
+    }
+    
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 15px;
+    }
+    
+    .service-item {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .service-status {
+      font-size: 1.5rem;
+    }
+    
+    .service-info h4 {
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+    
+    .service-info p {
+      font-size: 0.85rem;
+      color: #888;
+    }
+    
+    .logs-section {
+      background: rgba(0,0,0,0.3);
+      border-radius: 16px;
+      padding: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .log-entry {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.85rem;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      gap: 15px;
+    }
+    
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    
+    .log-time {
+      color: #666;
+      white-space: nowrap;
+    }
+    
+    .log-type {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+    
+    .log-type.info {
+      background: rgba(0,212,255,0.2);
+      color: #00d4ff;
+    }
+    
+    .log-type.success {
+      background: rgba(0,255,136,0.2);
+      color: #00ff88;
+    }
+    
+    .log-type.error {
+      background: rgba(255,107,107,0.2);
+      color: #ff6b6b;
+    }
+    
+    .log-message {
+      color: #ccc;
+    }
+    
+    .last-updated {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-size: 0.85rem;
+    }
+    
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .bugs-table-header,
+      .bug-row {
+        grid-template-columns: 80px 60px 60px 1fr;
+      }
+      
+      .bugs-table-header span:last-child,
+      .bug-status {
+        display: none;
+      }
+      
+      .progress-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #0f0f23;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 0.5s;
+    }
+    
+    .loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(0,212,255,0.2);
+      border-top-color: #00d4ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <p>Loading GRUBBRR Dashboard...</p>
+  </div>
+
+  <div class="container">
+    <header>
+      <h1>🔧 GRUBBRR Bug Fix Blitz</h1>
+      <p class="subtitle">Real-time Progress Tracking Dashboard</p>
+      <div class="live-indicator">
+        <span class="pulse"></span>
+        <span>LIVE UPDATING • 30s Refresh</span>
+      </div>
+    </header>
+
+    <section class="summary-cards">
+      <div class="card total">
+        <h3>Total Bugs</h3>
+        <div class="value" id="total-bugs">55</div>
+      </div>
+      <div class="card fixed">
+        <h3>Fixed</h3>
+        <div class="value" id="fixed-bugs">55</div>
+      </div>
+      <div class="card progress">
+        <h3>In Progress</h3>
+        <div class="value" id="progress-bugs">0</div>
+      </div>
+      <div class="card pending">
+        <h3>Remaining</h3>
+        <div class="value" id="pending-bugs">0</div>
+      </div>
+    </section>
+
+    <section class="progress-section">
+      <div class="progress-header">
+        <h2>Overall Progress</h2>
+        <div class="progress-percentage" id="progress-pct">100%</div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 100%"></div>
+      </div>
+    </section>
+
+    <section class="teams-section">
+      <h2 class="section-title">👥 Implementation Teams</h2>
+      <div class="teams-grid" id="teams-grid">
+        <!-- Teams populated by JS -->
+      </div>
+    </section>
+
+    <section class="bugs-section">
+      <h2 class="section-title">🐛 Bug Status</h2>
+      <div class="bugs-filter">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="fixed">✅ Fixed</button>
+        <button class="filter-btn" data-filter="in-progress">🟡 In Progress</button>
+        <button class="filter-btn" data-filter="pending">⏳ Pending</button>
+        <button class="filter-btn" data-filter="partial">⚠️ Partial</button>
+      </div>
+      <div class="bugs-table">
+        <div class="bugs-table-header">
+          <span>Bug ID</span>
+          <span>Wave</span>
+          <span>Team</span>
+          <span>Description</span>
+          <span>Status</span>
+        </div>
+        <div id="bugs-list">
+          <!-- Bugs populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <section class="services-section">
+      <h2 class="section-title">🏗️ Infrastructure Services</h2>
+      <div class="services-grid" id="services-grid">
+        <!-- Services populated by JS -->
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">📋 Activity Log</h2>
+      <div class="logs-section" id="logs-section">
+        <!-- Logs populated by JS -->
+      </div>
+    </section>
+
+    <footer class="last-updated">
+      Last Updated: <span id="last-updated-time">--</span>
+    </footer>
+  </div>
+
+  <script>
+    let currentFilter = 'all';
+    let data = null;
+    
+    const statusIcons = {
+      'fixed': '✅',
+      'in-progress': '🟡',
+      'pending': '⏳',
+      'partial': '⚠️',
+      'waiting': '⏸️'
+    };
+    
+    const statusLabels = {
+      'fixed': 'Fixed',
+      'in-progress': 'In Progress',
+      'pending': 'Pending',
+      'partial': 'Partial',
+      'waiting': 'Waiting'
+    };
+    
+    async function fetchData() {
+      try {
+        const response = await fetch(`data.json?t=${Date.now()}`);
+        data = await response.json();
+        updateDashboard();
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        addLogEntry('error', 'Failed to fetch dashboard data');
+      }
+    }
+    
+    function updateDashboard() {
+      if (!data) return;
+      
+      // Update summary cards
+      document.getElementById('total-bugs').textContent = data.summary.totalBugs;
+      document.getElementById('fixed-bugs').textContent = data.summary.fixed;
+      document.getElementById('progress-bugs').textContent = data.summary.partial;
+      document.getElementById('pending-bugs').textContent = data.summary.pending;
+      
+      // Update progress bar
+      const progress = ((data.summary.fixed / data.summary.totalBugs) * 100).toFixed(1);
+      document.getElementById('progress-pct').textContent = `${progress}%`;
+      document.getElementById('progress-fill').style.width = `${progress}%`;
+      
+      // Update teams
+      updateTeams(data.teams);
+      
+      // Update bugs list
+      updateBugs(data.bugs);
+      
+      // Update services
+      updateServices(data.servicesToCreate);
+      
+      // Update logs
+      updateLogs(data.logs);
+      
+      // Update timestamp
+      const date = new Date(data.lastUpdated);
+      document.getElementById('last-updated-time').textContent = date.toLocaleString();
+      
+      // Hide loading
+      document.getElementById('loading').classList.add('hidden');
+    }
+    
+    function updateTeams(teams) {
+      const grid = document.getElementById('teams-grid');
+      grid.innerHTML = teams.map(team => `
+        <div class="team-card ${team.status}">
+          <div class="team-header">
+            <span class="team-id">TEAM ${team.id}</span>
+            <span class="team-status ${team.status}">${statusLabels[team.status]}</span>
+          </div>
+          <h4>${team.name}</h4>
+          <p class="team-members">${team.members}</p>
+          <div class="team-progress">
+            <div class="team-progress-fill" style="width: ${team.progress}%"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function updateBugs(bugs) {
+      const list = document.getElementById('bugs-list');
+      const filteredBugs = currentFilter === 'all' 
+        ? bugs 
+        : bugs.filter(b => b.status === currentFilter);
+      
+      list.innerHTML = filteredBugs.map(bug => `
+        <div class="bug-row">
+          <span class="bug-id">${bug.id}</span>
+          <span class="bug-wave wave-${bug.wave}">Wave ${bug.wave}</span>
+          <span class="bug-team">Team ${bug.team}</span>
+          <span class="bug-description">${bug.description}</span>
+          <span class="bug-status">${statusIcons[bug.status]}</span>
+        </div>
+      `).join('');
+    }
+    
+    function updateServices(services) {
+      const grid = document.getElementById('services-grid');
+      grid.innerHTML = services.map(service => `
+        <div class="service-item">
+          <span class="service-status">${statusIcons[service.status]}</span>
+          <div class="service-info">
+            <h4>${service.name}</h4>
+            <p>${service.description}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function updateLogs(logs) {
+      const section = document.getElementById('logs-section');
+      section.innerHTML = logs.slice(-20).reverse().map(log => {
+        const time = new Date(log.time).toLocaleTimeString();
+        return `
+          <div class="log-entry">
+            <span class="log-time">${time}</span>
+            <span class="log-type ${log.type}">${log.type}</span>
+            <span class="log-message">${log.message}</span>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function addLogEntry(type, message) {
+      if (!data) return;
+      data.logs.push({
+        time: new Date().toISOString(),
+        type: type,
+        message: message
+      });
+      updateLogs(data.logs);
+    }
+    
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        if (data) updateBugs(data.bugs);
+      });
+    });
+    
+    // Initial fetch and polling
+    fetchData();
+    setInterval(fetchData, 30000);
+  </script>
+</body>
+</html>
